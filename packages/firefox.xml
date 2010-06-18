@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"\?>
+
+<packages>
+
+<package
+   id="firefox"
+   name="Firefox 3.6.3"
+   revision="3603"
+   reboot="false"
+   priority="10">
+
+   <install cmd='"%SOFTWARE%\firefox\Firefox Setup 3.6.3.exe" -ms /s /S /Silent /silent /VERYSILENT /SILENT' />
+
+   <upgrade cmd='"%SOFTWARE%\firefox\Firefox Setup 3.6.3.exe" -ms /s /S /Silent /silent /VERYSILENT /SILENT' />
+
+</package>
+
+</packages>
+

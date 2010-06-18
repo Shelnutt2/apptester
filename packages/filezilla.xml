@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"\?>
+
+<packages>
+
+<package
+   id="filezilla"
+   name="FileZilla 3.3.2.1"
+   revision="3321"
+   reboot="false"
+   priority="10">
+
+   <install cmd='"%SOFTWARE%\filezilla\FileZilla_3.3.2.1_win32-setup.exe" -ms -s -silent /s /S /Silent /silent /VERYSILENT /SILENT' />
+
+   <upgrade cmd='"%SOFTWARE%\filezilla\FileZilla_3.3.2.1_win32-setup.exe" -ms -s -silent /s /S /Silent /silent /VERYSILENT /SILENT' />
+
+</package>
+
+</packages>
+

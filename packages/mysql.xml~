@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"\?>
+
+<packages>
+
+<package
+   id="mysql"
+   name="MySQL 5.1.46"
+   revision="5146"
+   reboot="false"
+   priority="10">
+
+      <install cmd='msiexec /i /qn "%SOFTWARE%\mysql\mysql-essential-5.1.46-win32.msi"' />
+
+   <upgrade cmd='msiexec /i /qn "%SOFTWARE%\mysql\mysql-essential-5.1.46-win32.msi"' />
+
+</package>
+
+</packages>
+
