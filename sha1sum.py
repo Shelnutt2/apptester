@@ -25,7 +25,7 @@ if (len(sys.argv) < 2 ):
 if (len(sys.argv) == 3 ):
  if os.path.isfile( sys.argv[2] ):
     os.remove(sys.argv[2])
- class Logger(object):
+class Logger(object):
     def __init__(self):
         self.terminal = sys.stdout
         self.log = []
@@ -61,8 +61,9 @@ for dirname in sys.argv[1:]:
 	 print "sha1sum.py encountered an unexpected error"
 	 sys.exit(-1)
 
-logfile = open(sys.argv[2], "a")
-for item in sys.stdout.log:
+if (len(sys.argv) == 3 ):
+ logfile = open(sys.argv[2], "a")
+ for item in sys.stdout.log:
   logfile.write(str(item))
 
 # all files hashed with success

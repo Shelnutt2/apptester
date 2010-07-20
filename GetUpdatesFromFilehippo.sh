@@ -67,7 +67,7 @@ WGETOPTIONS="-t 0 -T 300"
 $WGET $WGETOPTIONS -U "$AGENT" -O $TEMPFILE1 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $URL
 
 NEWVERSION=$(grep "<h1>" $TEMPFILE1 | $AWK 'BEGIN { FS=">" } { print $2 }' | $AWK 'BEGIN { FS="<" } { print $1 }')
-NEWREVISION=$(grep "<h1>" $TEMPFILE1 | $AWK 'BEGIN { FS=">" } { print $2 }' | $AWK 'BEGIN { FS="<" } { print $1 }' |  tr -d '[A-Za-z]' | sed s," ","",g | sed s,"\.","",g )
+NEWREVISION=$(grep "<h1>" $TEMPFILE1 | $AWK 'BEGIN { FS=">" } { print $2 }' | $AWK 'BEGIN { FS="<" } { print $1 }' |  tr -cd '[[:digit:]]' )
 
 DOWNLOADURL1=$BASEURL`grep "<b>Download<br/>Latest Version</b>" $TEMPFILE1 | $AWK 'BEGIN { FS="\"" } { print $2 }'`
 
@@ -86,13 +86,15 @@ VERSION=$(grep "name" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="\"" } { print $2
 else
 CURRENTREVISION=0
 fi
+  echo Current revision = $CURRENTREVISION
+  echo New revision = $NEWREVISION
 
 if (( $NEWREVISION > $CURRENTREVISION )); then
   echo Current version = $VERSION
   echo New Version = $NEWVERSION
 
   echo "New version available... downloading..."
-  cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 -o $TEMPLOG && cd ../..
+  cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 && cd ../..
 FILENAME=$(grep "Saving to:" $TEMPLOG | $AWK 'BEGIN { FS="`" } { print $2 }' | $AWK 'BEGIN { FS="\47" } { print $1 }')
 
 
@@ -101,13 +103,13 @@ FILENAME=$(grep "Saving to:" $TEMPLOG | $AWK 'BEGIN { FS="`" } { print $2 }' | $
 
 if [ -f $XMLDIR/$PACKAGE.xml ]; then
 OLDFILENAME=$(grep "install" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="%SOFTWARE%" } { print $2 }' | $AWK ' BEGIN { FS="\\" } { print $3 }' | $AWK ' BEGIN { FS="\"" } { print $1 }')
-INSTALL=$(grep "install" $XMLDIR/$PACKAGE.xml | sed "s/$OLDFILENAME/$FILENAME/")
+INSTALL=$(grep "install" $XMLDIR/$PACKAGE.xml | sed s/"$OLDFILENAME"/"$FILENAME"/1)
 UPGRADE=$(echo $INSTALL | sed "0,/"install"/s//"upgrade"/")
 	
 	if [[ -f $EXEDIR/$OLDFILENAME ]]
 	then
 	echo "Removing old install file"
-	rm $EXEDIR/$OLDFILENAME
+	rm $EXEDIR/"$OLDFILENAME"
 	fi
 
 else
@@ -129,7 +131,7 @@ else
 
 fi
 
-echo  "<?xml version=\"1.0\" encoding=\"UTF-8\"\?>
+echo  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <packages>
 
@@ -150,6 +152,11 @@ echo  "<?xml version=\"1.0\" encoding=\"UTF-8\"\?>
 " > $XMLDIR/$PACKAGE.xml
 else
   echo "The $VERSION is still the newest version out there."
+  OLDFILENAME=$(grep "install" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="%SOFTWARE%" } { print $2 }' | $AWK ' BEGIN { FS="\\" } { print $3 }' | $AWK ' BEGIN { FS="\"" } { print $1 }')
+  if [ ! -f "$EXEDIR/$OLDFILENAME" ]; then
+	echo "Installer does not exists, downloading now..."
+	cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 && cd ../..
+  fi
 fi
 
 # clean up temp files

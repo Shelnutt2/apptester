@@ -1,17 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"\?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <packages>
 
 <package
    id="comodo"
-   name="Comodo Internet Security 4.0.141842"
-   revision="40141842"
+   name="Comodo Internet Security 4.1.150349"
+   revision="41150349"
    reboot="false"
    priority="10">
 
-   <install cmd='"%SOFTWARE%\comodo\cisfree_installer_x86.exe" -ms -s -silent /s /S /Silent /silent /VERYSILENT /SILENT' />
+   <install cmd='"%SOFTWARE%\comodo\cispremium_installer_x86.exe.1" -ms -s -silent /s /S /Silent /silent /VERYSILENT /SILENT' />
 
-   <upgrade cmd='"%SOFTWARE%\comodo\cisfree_installer_x86.exe" -ms -s -silent /s /S /Silent /silent /VERYSILENT /SILENT' />
+   <upgrade cmd='"%SOFTWARE%\comodo\cispremium_installer_x86.exe.1" -ms -s -silent /s /S /Silent /silent /VERYSILENT /SILENT' />
 
 </package>
 
