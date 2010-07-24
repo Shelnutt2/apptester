@@ -37,6 +37,7 @@ BASEURL=http://www.filehippo.com
 URL=$BASEURL/download_$PACKAGE
 TEMPFILE1=/tmp/$PACKAGE-1.html
 TEMPFILE2=/tmp/$PACKAGE-2.html
+TEMPFILE3=/tmp/$PACKAGE-3.html
 TEMPLOG=/tmp/$PACKAGE.log
 EXEDIR="software/$PACKAGE"
 XMLDIR="packages"
@@ -167,17 +168,27 @@ if [ `echo $1 | tr [:upper:] [:lower:]` = `echo "download" | tr [:upper:] [:lowe
   echo "Checking if installer exists"
   if [ ! -f "$EXEDIR/$OLDFILENAME" ]; then
 	echo "Installer does not exists, downloading now..."
+LATEST=$(grep "<title>" $TEMPFILE1 | grep "Download Firefox 3.6.8" )
+    if [ -n "$LATEST" ]; then
+         DOWNLOADURL2=$BASEURL`grep "<b>Download<br/>Latest Version</b>" $TEMPFILE1 | $AWK 'BEGIN { FS="\"" } { print $2 }'`
+
+    else
         VERSION=$(grep "name" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="\"" } { print $2 }')
         DOWNLOADURL1=$BASEURL`grep "$VERSION" $TEMPFILE1 | $AWK 'BEGIN { FS="\"" } { print $2 }'`
+
         $WGET $WGETOPTIONS -U "$AGENT" -q -O $TEMPFILE2 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $DOWNLOADURL1
-        DOWNLOADURL2=$BASEURL`grep "Refresh" $TEMPFILE2 | $AWK 'BEGIN { FS="=" } { print $4 }' | $AWK 'BEGIN { FS="\"" } { print $1 }'`
-	cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 && cd ../..
+        DOWNLOADURL2=$BASEURL`grep "<b>Download<br/>This Version</b>" $TEMPFILE2 | $AWK 'BEGIN { FS="\"" } { print $2 }'`
+fi
+        $WGET $WGETOPTIONS -U "$AGENT" -q -O $TEMPFILE3 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $DOWNLOADURL2
+        DOWNLOADURL3=$BASEURL`grep "Refresh" $TEMPFILE3 | $AWK 'BEGIN { FS="=" } { print $4 }' | $AWK 'BEGIN { FS="\"" } { print $1 }'`
+	cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" -o $TEMPLOG $DOWNLOADURL3 && cd ../..
   fi
 fi
 
 # clean up temp files
 rm -f $TEMPFILE1
 rm -f $TEMPFILE2
+rm -f $TEMPFILE3
 rm -f $TEMPLOG
 
 # delay so back-to-back calls of thie script don't overload the server.
