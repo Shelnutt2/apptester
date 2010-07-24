@@ -23,7 +23,7 @@
 if [ -z "$1" ]; then
   echo "Downloads the latest version of a package from filehippo.com."
   echo
-  echo "Usage: $0 <package name>"
+  echo "Usage: $0 [update/download] <package name>"
   echo
   echo "  where <package name> is the name of the filehippo.com package."
   echo
@@ -32,7 +32,7 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-PACKAGE=$1
+PACKAGE=$2
 BASEURL=http://www.filehippo.com
 URL=$BASEURL/download_$PACKAGE
 TEMPFILE1=/tmp/$PACKAGE-1.html
@@ -64,8 +64,12 @@ fi
 AGENT="Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3"
 WGETOPTIONS="-t 0 -T 300"
 
-$WGET $WGETOPTIONS -U "$AGENT" -O $TEMPFILE1 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $URL
 
+$WGET $WGETOPTIONS -U "$AGENT" -q -O $TEMPFILE1 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $URL
+
+if [ `echo $1 | tr [:upper:] [:lower:]` = `echo "update" | tr [:upper:] [:lower:]` ]
+ then
+echo "Checking for update"
 NEWVERSION=$(grep "<h1>" $TEMPFILE1 | $AWK 'BEGIN { FS=">" } { print $2 }' | $AWK 'BEGIN { FS="<" } { print $1 }')
 NEWREVISION=$(grep "<h1>" $TEMPFILE1 | $AWK 'BEGIN { FS=">" } { print $2 }' | $AWK 'BEGIN { FS="<" } { print $1 }' |  tr -cd '[[:digit:]]' )
 
@@ -74,7 +78,7 @@ DOWNLOADURL1=$BASEURL`grep "<b>Download<br/>Latest Version</b>" $TEMPFILE1 | $AW
 # delay so don't overload the server.
 sleep 1
 
-$WGET $WGETOPTIONS -U "$AGENT" -O $TEMPFILE2 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $DOWNLOADURL1
+$WGET $WGETOPTIONS -U "$AGENT" -q -O $TEMPFILE2 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $DOWNLOADURL1
 DOWNLOADURL2=$BASEURL`grep "Refresh" $TEMPFILE2 | $AWK 'BEGIN { FS="=" } { print $4 }' | $AWK 'BEGIN { FS="\"" } { print $1 }'`
 
 
@@ -94,7 +98,7 @@ if (( $NEWREVISION > $CURRENTREVISION )); then
   echo New Version = $NEWVERSION
 
   echo "New version available... downloading..."
-  cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 && cd ../..
+  cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 -o $TEMPLOG && cd ../..
 FILENAME=$(grep "Saving to:" $TEMPLOG | $AWK 'BEGIN { FS="`" } { print $2 }' | $AWK 'BEGIN { FS="\47" } { print $1 }')
 
 
@@ -102,8 +106,8 @@ FILENAME=$(grep "Saving to:" $TEMPLOG | $AWK 'BEGIN { FS="`" } { print $2 }' | $
   # create a new package.xml file, but use old silent install commands if old version exists.
 
 if [ -f $XMLDIR/$PACKAGE.xml ]; then
-OLDFILENAME=$(grep "install" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="%SOFTWARE%" } { print $2 }' | $AWK ' BEGIN { FS="\\" } { print $3 }' | $AWK ' BEGIN { FS="\"" } { print $1 }')
-INSTALL=$(grep "install" $XMLDIR/$PACKAGE.xml | sed s/"$OLDFILENAME"/"$FILENAME"/1)
+OLDFILENAME=$(grep -m 1 "install" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="%SOFTWARE%" } { print $2 }' | $AWK ' BEGIN { FS="\\" } { print $3 }' | $AWK ' BEGIN { FS="\"" } { print $1 }')
+INSTALL=$(grep -m 1 "install" $XMLDIR/$PACKAGE.xml | sed s/"$OLDFILENAME"/"$FILENAME"/1)
 UPGRADE=$(echo $INSTALL | sed "0,/"install"/s//"upgrade"/")
 	
 	if [[ -f $EXEDIR/$OLDFILENAME ]]
@@ -152,9 +156,21 @@ echo  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 " > $XMLDIR/$PACKAGE.xml
 else
   echo "The $VERSION is still the newest version out there."
-  OLDFILENAME=$(grep "install" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="%SOFTWARE%" } { print $2 }' | $AWK ' BEGIN { FS="\\" } { print $3 }' | $AWK ' BEGIN { FS="\"" } { print $1 }')
+
+fi
+
+fi
+
+if [ `echo $1 | tr [:upper:] [:lower:]` = `echo "download" | tr [:upper:] [:lower:]` ]
+ then
+  OLDFILENAME=$(grep -m 1 "install" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="%SOFTWARE%" } { print $2 }' | $AWK ' BEGIN { FS="\\" } { print $3 }' | $AWK ' BEGIN { FS="\"" } { print $1 }')
+  echo "Checking if installer exists"
   if [ ! -f "$EXEDIR/$OLDFILENAME" ]; then
 	echo "Installer does not exists, downloading now..."
+        VERSION=$(grep "name" $XMLDIR/$PACKAGE.xml | $AWK ' BEGIN { FS="\"" } { print $2 }')
+        DOWNLOADURL1=$BASEURL`grep "$VERSION" $TEMPFILE1 | $AWK 'BEGIN { FS="\"" } { print $2 }'`
+        $WGET $WGETOPTIONS -U "$AGENT" -q -O $TEMPFILE2 --header="Cookie: Filter=NOBETA=1&NODEMO=0" $DOWNLOADURL1
+        DOWNLOADURL2=$BASEURL`grep "Refresh" $TEMPFILE2 | $AWK 'BEGIN { FS="=" } { print $4 }' | $AWK 'BEGIN { FS="\"" } { print $1 }'`
 	cd $EXEDIR && $WGET $WGETOPTIONS -U "$AGENT" $DOWNLOADURL2 && cd ../..
   fi
 fi
