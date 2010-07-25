@@ -49,52 +49,6 @@ if len(args) != 1 and not any( [options.LIST, options.All] ):
     parser.error("Please either use the -A flag or specify a specific software package")
 
 
-if options.LIST:
-   LISTFILE = open('list', 'r')
-   for line in LISTFILE:
-	print line,
-   LISTFILE.close()
-   sys.exit(0)
-
-
-if 'options.logfilename' in globals():
-   pass
-else:
-   options.logfilename = os.path.join( tempfile.gettempdir(), "apptester.log" ) 
-if options.debug:
- if os.path.isfile( options.logfilename ):
-   os.remove(options.logfilename)
-
-if options.debug == 0:
-  os.environ.__setitem__("WINEDEBUG", 'WINEDEBUG="err,warn-all,fixme-all,trace-all"')
-
-elif options.debug == 1:
-  os.environ.__setitem__("WINEDEBUG", 'WINEDEBUG="+trace"')
-
-elif options.debug == 2:
-  os.environ.__setitem__("WINEDEBUG", 'WINEDEBUG="+all"')
-
-else:
-  sys.exit("Please set a proper debug value")
-
-now = datetime.datetime.now()
-HOME=os.environ["HOME"]
-os.environ.__setitem__("WINE", "wine")
-os.environ.__setitem__("WINECONSOLE", "wineconsole")
-os.environ.__setitem__("WINESERVER", "wineserver")
-os.environ.__setitem__("WINEPREFIX", os.path.join(HOME, ".wine-appinstall"))
-os.environ.__setitem__("APPINSTALL_CACHE", os.path.join(HOME, ".appinstallcache"))
-os.environ.__setitem__("TAG", now.strftime("%Y-%m-%d"))
-
-TAG= os.environ["TAG"]
-WINE= os.environ["WINE"]
-WINECONSOLE= os.environ["WINECONSOLE"]
-WINESERVER= os.environ["WINESERVER"]
-WINEPREFIX= os.environ["WINEPREFIX"]
-APPINSTALL_CACHE= os.environ["APPINSTALL_CACHE"]
-SOFTWARE=os.path.join("software")
-WINEDEBUG= os.environ["WINEDEBUG"]
-
 def cleanup():
   if os.path.exists(WINEPREFIX):
      shutil.rmtree(WINEPREFIX)
@@ -174,6 +128,8 @@ def pyget(url, file, folder):
      if ( file == None ):
       file = url[i+1:]
      if ( folder != None ):
+      if not os.path.isdir(folder):
+         os.makedirs(folder)
       urllib.urlretrieve(url, os.path.join(folder,file), reporthook)
      else:
       urllib.urlretrieve(url,file,reporthook)
@@ -185,7 +141,7 @@ def getmsysget():
      winerun(os.path.join("tools","PortableGit-1.7.1-preview20100612.zip.exe"))
      for file in os.listdir("PortableGit-1.7.1-preview20100612"):
       shutil.move(os.path.join("PortableGit-1.7.1-preview20100612",file),os.path.join("tools","PortableGit-1.7.1-preview20100612"))
-
+     shutil.rmtree("PortableGit-1.7.1-preview20100612")
 
 def filehippo(option,package):
     fh=os.path.join("tools","GetUpdatesFromFilehippo.sh")
@@ -202,8 +158,8 @@ def filehippo(option,package):
 
 def testinstall(package):
     ti = os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","sha1sums",package + "-sha1sum.ahk")
-    winerun(ti)
-    return ti[0],ti[1]
+    tip=winerun(ti)
+    return tip[0],tip[1]
 
 def wpkg(package):
     xmldoc = minidom.parse(os.path.join("packages", package + ".xml"))
@@ -214,16 +170,70 @@ def wpkg(package):
     wr=winerun(b)
     tir=testinstall(package)
     
-    if any( [repr(wr[1]).find("err:") != -1, repr(wr[1]).find("error") != -1 ] ):
+    if any( [repr(wr[1]).find("err:") != -1, repr(wr[1]).find("error") != -1] ):
        reports(package,"Installation: Partial")
-    if any( [repr(tir[1]).find("err:") != -1, repr(tir[1]).find("error") != -1 ] ):
+    if any( [repr(tir[1]).find("err:") != -1, repr(tir[1]).find("error") != -1] ):
        reports(package,"Installation: Failed")
     else:
        reports(package,"Installation: Success")
     return
     
+def testpackage(package):
+    tp= os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","tests",package + "-tests.ahk")
+    tpp=winerun(tp)
+    if any( [repr(tpp[1]).find("err:") !=-1, repr(tpp[1]).find("error") !=-1] ):
+       reports(package,"Tests: Failed")
+    else:
+       reports(package,"Tests: Success")
+    return tpp[0],tpp[1]
 
 
+if options.LIST:
+   if not os.path.isfile(os.path.join("tools","list")):
+      pyget("http://github.com/Shelnutt2/apptester/raw/master/tools/list","list","tools")
+   LISTFILE = open(os.path.join("tools","list"), 'r')
+   for line in LISTFILE:
+	print line,
+   LISTFILE.close()
+   sys.exit(0)
+
+if 'options.logfilename' in globals():
+   pass
+else:
+   options.logfilename = os.path.join( tempfile.gettempdir(), "apptester.log" ) 
+if options.debug:
+ if os.path.isfile( options.logfilename ):
+   os.remove(options.logfilename)
+
+if options.debug == 0:
+  os.environ.__setitem__("WINEDEBUG", 'WINEDEBUG="err,warn-all,fixme-all,trace-all"')
+
+elif options.debug == 1:
+  os.environ.__setitem__("WINEDEBUG", 'WINEDEBUG="+trace"')
+
+elif options.debug == 2:
+  os.environ.__setitem__("WINEDEBUG", 'WINEDEBUG="+all"')
+
+else:
+  sys.exit("Please set a proper debug value")
+
+now = datetime.datetime.now()
+HOME=os.environ["HOME"]
+os.environ.__setitem__("WINE", "wine")
+os.environ.__setitem__("WINECONSOLE", "wineconsole")
+os.environ.__setitem__("WINESERVER", "wineserver")
+os.environ.__setitem__("WINEPREFIX", os.path.join(HOME, ".wine-appinstall"))
+os.environ.__setitem__("APPINSTALL_CACHE", os.path.join(HOME, ".appinstallcache"))
+os.environ.__setitem__("TAG", now.strftime("%Y-%m-%d"))
+
+TAG= os.environ["TAG"]
+WINE= os.environ["WINE"]
+WINECONSOLE= os.environ["WINECONSOLE"]
+WINESERVER= os.environ["WINESERVER"]
+WINEPREFIX= os.environ["WINEPREFIX"]
+APPINSTALL_CACHE= os.environ["APPINSTALL_CACHE"]
+SOFTWARE=os.path.join("software")
+WINEDEBUG= os.environ["WINEDEBUG"]
 
 
 if (which(WINE) == None):
@@ -265,7 +275,9 @@ if options.All:
    if os.path.isfile("autohotkey.exe"):
     verifyahk("autohotkey.exe")
 
-   LISTFILE = open("list", 'r')
+   if not os.path.isfile(os.path.join("tools","list")):
+      pyget("http://github.com/Shelnutt2/apptester/raw/master/tools/list","list","tools")
+   LISTFILE = open(os.path.join("tools","list"), 'r')
    for line in LISTFILE:
       packdetail= line.strip()
       packdetail= packdetail.translate(None, ' ')
@@ -280,6 +292,7 @@ if options.All:
       if os.listdir(os.path.join(SOFTWARE,packdetail[0])):
          prep_prefix()
          wpkg(packdetail[0])
+         testpackage(packdetail[0])
    LISTFILE.close()
 
 
