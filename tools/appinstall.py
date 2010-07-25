@@ -254,13 +254,13 @@ pyget("http://winezeug.googlecode.com/svn/trunk/winetricks", os.path.join("tools
 cleanup()
 
 if options.All:
-   if os.path.exists("tools"):
-      shutil.rmtree("tools")
    if (which("git") == None):
     getmsysgit()
     if os.path.exists(".git"):
      winerun("tools/PortableGit-1.7.1-preview20100612/bin/git.exe pull")
     else:
+     if os.path.exists("tools"):
+      shutil.rmtree("tools")
      winerun("tools/PortableGit-1.7.1-preview20100612/bin/git.exe clone https://github.com/Shelnutt2/apptester.git")
      for file in os.listdir("apptester"):
       shutil.move(os.path.join("apptester",file),os.getcwd())
@@ -269,6 +269,8 @@ if options.All:
     subprocess.call("git pull", shell=True)
 
    else:
+    if os.path.exists("tools"):
+      shutil.rmtree("tools")
     subprocess.call("git clone git://github.com/Shelnutt2/apptester.git", shell=True)
     for file in os.listdir("apptester"):
      shutil.move(os.path.join("apptester",file),os.getcwd())
