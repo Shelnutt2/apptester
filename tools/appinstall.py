@@ -157,9 +157,12 @@ def filehippo(option,package):
     return stderr_value
 
 def testinstall(package):
-    ti = os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","sha1sums",package + "-sha1sum.ahk")
-    tip=winerun(ti)
-    return tip[0],tip[1]
+    if os.path.exists(os.path.join("scripts","sha1sums",package + "-sha1sum.ahk")):
+       ti = os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","sha1sums",package + "-sha1sum.ahk")
+       tip=winerun(ti)
+       return tip[0],tip[1]
+    else:
+       return "no sha1"
 
 def wpkg(package):
     xmldoc = minidom.parse(os.path.join("packages", package + ".xml"))
@@ -169,7 +172,8 @@ def wpkg(package):
     b = a.value.replace("%SOFTWARE%",SOFTWARE)
     wr=winerun(b)
     tir=testinstall(package)
-    
+    if ( tir[0]== "no sha1" ):
+       reports(package,"Installation: No Tests")
     if any( [repr(wr[1]).find("err:") != -1, repr(wr[1]).find("error") != -1] ):
        reports(package,"Installation: Partial")
     if any( [repr(tir[1]).find("err:") != -1, repr(tir[1]).find("error") != -1] ):
@@ -179,13 +183,17 @@ def wpkg(package):
     return
     
 def testpackage(package):
-    tp= os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","tests",package + "-tests.ahk")
-    tpp=winerun(tp)
-    if any( [repr(tpp[1]).find("err:") !=-1, repr(tpp[1]).find("error") !=-1] ):
-       reports(package,"Tests: Failed")
+    if os.path.exists(os.path.join("scripts","tests",package + "-tests.ahk"))
+       tp= os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","tests",package + "-tests.ahk")
+       tpp=winerun(tp)
+       if any( [repr(tpp[1]).find("err:") !=-1, repr(tpp[1]).find("error") !=-1] ):
+          reports(package,"Tests: Failed")
+       else:
+          reports(package,"Tests: Success")
+       return tpp[0],tpp[1]
     else:
-       reports(package,"Tests: Success")
-    return tpp[0],tpp[1]
+       reports(package,"Tests: No Tests")
+       return
 
 
 if options.LIST:
