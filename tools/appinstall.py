@@ -254,6 +254,8 @@ pyget("http://winezeug.googlecode.com/svn/trunk/winetricks", os.path.join("tools
 cleanup()
 
 if options.All:
+   if os.path.exists("tools"):
+      shutil.rmtree("tools")
    if (which("git") == None):
     getmsysgit()
     if os.path.exists(".git"):
