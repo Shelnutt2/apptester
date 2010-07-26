@@ -57,6 +57,8 @@ def cleanup():
      for File in CACHEFILES:
          if any( [File == "*.txt", File == "*.ahk", File == "helper_functions*", File == "init_tests*", File == "test_list*"] ):
 	    os.remove(os.path.join(WINEPREFIX, File))
+  else:
+        os.mkdir(APPINSTALL_CACHE)
   return
 
 def prep_prefix():
@@ -80,7 +82,7 @@ def verifysha1(PATH,SHA1):
   return
 
 def reports(package, message):
-#  if not os.path.exists("pappinstall-" + TAG):
+
   if not os.path.exists("pappinstall-" + TAG):
    os.mkdir("pappinstall-" + TAG)
    f = open(os.path.join("pappinstall-" + TAG,package + ".report"), 'a')
@@ -180,16 +182,28 @@ def wpkg(package):
        reports(package,"Installation: Failed")
     else:
        reports(package,"Installation: Success")
+    if os.path.exists(os.path.join(APPINSTALL_CACHE,package + "-sha1sum-result.txt")):
+       reportfile= open(os.path.join(APPINSTALL_CACHE,package + "-sha1sum-result.txt"), 'r')
+       for line in reportfile:
+          reports(package,line.strip())
+       reportfile.close()
     return
     
 def testpackage(package):
-    if os.path.exists(os.path.join("scripts","tests",package + "-tests.ahk"))
+    if os.path.exists(os.path.join("scripts","tests",package + "-tests.ahk")):
        tp= os.path.join("tools","autohotkey.exe") + " " + os.path.join("scripts","tests",package + "-tests.ahk")
        tpp=winerun(tp)
+       print tpp[0]
+       print tpp[1]
        if any( [repr(tpp[1]).find("err:") !=-1, repr(tpp[1]).find("error") !=-1] ):
           reports(package,"Tests: Failed")
        else:
           reports(package,"Tests: Success")
+       if os.path.exists(os.path.join(APPINSTALL_CACHE,package + "-tests-result.txt")):
+          reportfile= open(os.path.join(APPINSTALL_CACHE,package + "-tests-result.txt"), 'r')
+          for line in reportfile:
+             reports(package,line.strip())
+          reportfile.close()
        return tpp[0],tpp[1]
     else:
        reports(package,"Tests: No Tests")
