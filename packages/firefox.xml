@@ -9,9 +9,9 @@
    reboot="false"
    priority="10">
 
-            <install cmd='"%SOFTWARE%\firefox\Firefox Setup 3.6.8.exe" -ms /s /S /Silent /silent /VERYSILENT /SILENT' />
+   <install cmd='"%SOFTWARE%\firefox\Firefox Setup 3.6.8.exe" -ms' />
 
-   <upgrade cmd='"%SOFTWARE%\firefox\Firefox Setup 3.6.8.exe" -ms /s /S /Silent /silent /VERYSILENT /SILENT' />
+   <upgrade cmd='"%SOFTWARE%\firefox\Firefox Setup 3.6.8.exe" -ms ' />
 
 </package>
 
